@@ -1,0 +1,331 @@
+{
+  "name": "Instagram Influencer Posting Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily Post Scheduler",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Content planning logic\nconst contentTypes = ['post', 'story', 'reel', 'carousel'];\nconst hashtags = [\n  '#influencer', '#lifestyle', '#fashion', '#beauty', '#travel',\n  '#food', '#fitness', '#motivation', '#inspiration', '#trending'\n];\n\n// Generate random content type and hashtags\nconst randomType = contentTypes[Math.floor(Math.random() * contentTypes.length)];\nconst randomHashtags = hashtags\n  .sort(() => 0.5 - Math.random())\n  .slice(0, 5)\n  .join(' ');\n\n// Create content plan\nconst contentPlan = {\n  type: randomType,\n  caption: `New ${randomType} coming your way! 🎉\\n\\n${randomHashtags}`,\n  hashtags: randomHashtags,\n  scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now\n  engagement: {\n    likes: Math.floor(Math.random() * 1000) + 100,\n    comments: Math.floor(Math.random() * 100) + 10,\n    shares: Math.floor(Math.random() * 50) + 5\n  }\n};\n\nreturn [{\n  json: contentPlan\n}];"
+      },
+      "id": "content-planner",
+      "name": "Content Planner",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "post",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "content-type-router",
+      "name": "Content Type Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Instagram post content\nconst postData = $input.first().json;\n\n// Simulate AI-generated caption\nconst captions = [\n  `✨ Exciting new content for you all!\\n\\n${postData.hashtags}`,\n  `🎯 What do you think about this?\\n\\n${postData.hashtags}`,\n  `🔥 This is going to be amazing!\\n\\n${postData.hashtags}`\n];\n\nconst randomCaption = captions[Math.floor(Math.random() * captions.length)];\n\n// Create post object\nconst post = {\n  type: 'post',\n  caption: randomCaption,\n  hashtags: postData.hashtags,\n  scheduledTime: postData.scheduledTime,\n  media: {\n    type: 'image',\n    url: 'https://example.com/placeholder-image.jpg',\n    altText: 'Instagram post image'\n  },\n  engagement: postData.engagement\n};\n\nreturn [{\n  json: post\n}];"
+      },
+      "id": "post-generator",
+      "name": "Post Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Instagram story content\nconst storyData = $input.first().json;\n\n// Story-specific content\nconst story = {\n  type: 'story',\n  caption: `Story time! 📱\\n\\n${storyData.hashtags}`,\n  hashtags: storyData.hashtags,\n  scheduledTime: storyData.scheduledTime,\n  media: {\n    type: 'image',\n    url: 'https://example.com/placeholder-story.jpg',\n    altText: 'Instagram story image'\n  },\n  duration: 24 * 60 * 60 * 1000, // 24 hours\n  engagement: storyData.engagement\n};\n\nreturn [{\n  json: story\n}];"
+      },
+      "id": "story-generator",
+      "name": "Story Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Instagram reel content\nconst reelData = $input.first().json;\n\n// Reel-specific content\nconst reel = {\n  type: 'reel',\n  caption: `New reel alert! 🎬\\n\\n${reelData.hashtags}`,\n  hashtags: reelData.hashtags,\n  scheduledTime: reelData.scheduledTime,\n  media: {\n    type: 'video',\n    url: 'https://example.com/placeholder-reel.mp4',\n    altText: 'Instagram reel video',\n    duration: 30 // 30 seconds\n  },\n  engagement: reelData.engagement\n};\n\nreturn [{\n  json: reel\n}];"
+      },
+      "id": "reel-generator",
+      "name": "Reel Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Instagram carousel content\nconst carouselData = $input.first().json;\n\n// Carousel-specific content\nconst carousel = {\n  type: 'carousel',\n  caption: `Swipe through these amazing photos! 📸\\n\\n${carouselData.hashtags}`,\n  hashtags: carouselData.hashtags,\n  scheduledTime: carouselData.scheduledTime,\n  media: {\n    type: 'carousel',\n    items: [\n      {\n        url: 'https://example.com/carousel-1.jpg',\n        altText: 'Carousel image 1'\n      },\n      {\n        url: 'https://example.com/carousel-2.jpg',\n        altText: 'Carousel image 2'\n      },\n      {\n        url: 'https://example.com/carousel-3.jpg',\n        altText: 'Carousel image 3'\n      }\n    ]\n  },\n  engagement: carouselData.engagement\n};\n\nreturn [{\n  json: carousel\n}];"
+      },
+      "id": "carousel-generator",
+      "name": "Carousel Generator",
+      "typeVersion": 2,
+      "position": [900, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Content approval and scheduling\nconst content = $input.first().json;\n\n// Simulate approval process\nconst isApproved = Math.random() > 0.1; // 90% approval rate\n\nif (isApproved) {\n  // Add approval metadata\n  content.approved = true;\n  content.approvedAt = new Date().toISOString();\n  content.approvedBy = 'Automated System';\n  \n  // Add posting instructions\n  content.postingInstructions = {\n    platform: 'Instagram',\n    account: '@influencer_handle',\n    scheduledTime: content.scheduledTime,\n    autoPost: true\n  };\n} else {\n  content.approved = false;\n  content.rejectionReason = 'Content quality check failed';\n}\n\nreturn [{\n  json: content\n}];"
+      },
+      "id": "content-approver",
+      "name": "Content Approver",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": true,
+              "operator": {\n                "type": "boolean",\n                "operation": "equal"\n              }\n            }\n          ],\n          "combinator": "and"\n        },\n        "options": {}\n      },\n      "id": "approval-router",
+      "name": "Approval Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Instagram posting simulation\nconst approvedContent = $input.first().json;\n\n// Simulate Instagram API call\nconst postResult = {\n  success: true,\n  postId: `ig_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,\n  platform: 'Instagram',\n  postedAt: new Date().toISOString(),\n  content: approvedContent,\n  metrics: {\n    initialViews: Math.floor(Math.random() * 1000) + 100,\n    initialLikes: Math.floor(Math.random() * 100) + 10,\n    initialComments: Math.floor(Math.random() * 20) + 2\n  }\n};\n\n// Log posting success\nconsole.log(`✅ Posted ${approvedContent.type} to Instagram: ${postResult.postId}`);\n\nreturn [{\n  json: postResult\n}];"
+      },
+      "id": "instagram-poster",
+      "name": "Instagram Poster",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Analytics and reporting\nconst postResult = $input.first().json;\nconst content = postResult.content;\n\n// Generate performance report\nconst report = {\n  timestamp: new Date().toISOString(),\n  postId: postResult.postId,\n  contentType: content.type,\n  platform: 'Instagram',\n  performance: {\n    views: postResult.metrics.initialViews,\n    likes: postResult.metrics.initialLikes,\n    comments: postResult.metrics.initialComments,\n    engagementRate: ((postResult.metrics.initialLikes + postResult.metrics.initialComments) / postResult.metrics.initialViews * 100).toFixed(2),\n    reach: Math.floor(postResult.metrics.initialViews * (1 + Math.random() * 0.5))\n  },\n  hashtags: content.hashtags,\n  scheduledTime: content.scheduledTime,\n  actualPostTime: postResult.postedAt\n};\n\n// Log report\nconsole.log(`📊 Performance Report for ${content.type}:`, report);\n\nreturn [{\n  json: report\n}];"
+      },
+      "id": "analytics-generator",
+      "name": "Analytics Generator",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Notification system\nconst report = $input.first().json;\n\n// Create notification message\nconst notification = {\n  type: 'success',\n  title: 'Instagram Post Published Successfully! 🎉',\n  message: `Your ${report.contentType} has been posted to Instagram.\\n\\n📊 Performance Metrics:\\n• Views: ${report.performance.views}\\n• Likes: ${report.performance.likes}\\n• Comments: ${report.performance.comments}\\n• Engagement Rate: ${report.performance.engagementRate}%\\n• Reach: ${report.performance.reach}\\n\\n⏰ Posted at: ${new Date(report.actualPostTime).toLocaleString()}\\n\\n${report.hashtags}`,\n  timestamp: new Date().toISOString(),\n  priority: 'medium'\n};\n\n// Simulate sending notification (email, Slack, etc.)\nconsole.log(`🔔 Notification sent: ${notification.title}`);\n\nreturn [{\n  json: notification\n}];"
+      },
+      "id": "notification-sender",
+      "name": "Notification Sender",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Content rejection handling\nconst rejectedContent = $input.first().json;\n\n// Create rejection notification\nconst rejectionNotification = {\n  type: 'warning',\n  title: 'Content Rejected ❌',\n  message: `Your ${rejectedContent.type} content was not approved.\\n\\nReason: ${rejectedContent.rejectionReason}\\n\\nContent Type: ${rejectedContent.type}\\nScheduled Time: ${rejectedContent.scheduledTime}\\n\\nPlease review and resubmit.`,\n  timestamp: new Date().toISOString(),\n  priority: 'high',\n  actionRequired: true\n};\n\n// Log rejection\nconsole.log(`❌ Content rejected: ${rejectedContent.type}`);\n\nreturn [{\n  json: rejectionNotification\n}];"
+      },
+      "id": "rejection-handler",
+      "name": "Rejection Handler",
+      "typeVersion": 2,
+      "position": [1560, 600]
+    }
+  ],
+  "connections": {
+    "Daily Post Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Content Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Planner": {
+      "main": [
+        [
+          {
+            "node": "Content Type Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Type Router": {
+      "main": [
+        [
+          {
+            "node": "Post Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Story Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reel Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Carousel Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reel Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carousel Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Approver": {
+      "main": [
+        [
+          {
+            "node": "Approval Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Router": {
+      "main": [
+        [
+          {
+            "node": "Instagram Poster",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rejection Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Poster": {
+      "main": [
+        [
+          {
+            "node": "Analytics Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Generator": {
+      "main": [
+        [
+          {
+            "node": "Notification Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "instagram-automation",
+      "name": "Instagram Automation"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
