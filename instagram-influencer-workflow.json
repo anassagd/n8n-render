@@ -1,0 +1,347 @@
+{
+  "name": "Instagram Influencer Posting Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily Post Scheduler",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const contentTypes = ['post', 'story', 'reel', 'carousel'];\nconst hashtags = ['#influencer', '#lifestyle', '#fashion', '#beauty', '#travel', '#food', '#fitness', '#motivation', '#inspiration', '#trending'];\nconst randomType = contentTypes[Math.floor(Math.random() * contentTypes.length)];\nconst randomHashtags = hashtags.sort(() => 0.5 - Math.random()).slice(0, 5).join(' ');\nconst contentPlan = {\n  type: randomType,\n  caption: `New ${randomType} coming your way! 🎉\\n\\n${randomHashtags}`,\n  hashtags: randomHashtags,\n  scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),\n  engagement: {\n    likes: Math.floor(Math.random() * 1000) + 100,\n    comments: Math.floor(Math.random() * 100) + 10,\n    shares: Math.floor(Math.random() * 50) + 5\n  }\n};\nreturn [{ json: contentPlan }];"
+      },
+      "id": "content-planner",
+      "name": "Content Planner",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "post",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "content-type-router",
+      "name": "Content Type Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const postData = $input.first().json;\nconst captions = [`✨ Exciting new content for you all!\\n\\n${postData.hashtags}`, `🎯 What do you think about this?\\n\\n${postData.hashtags}`, `🔥 This is going to be amazing!\\n\\n${postData.hashtags}`];\nconst randomCaption = captions[Math.floor(Math.random() * captions.length)];\nconst post = {\n  type: 'post',\n  caption: randomCaption,\n  hashtags: postData.hashtags,\n  scheduledTime: postData.scheduledTime,\n  media: {\n    type: 'image',\n    url: 'https://example.com/placeholder-image.jpg',\n    altText: 'Instagram post image'\n  },\n  engagement: postData.engagement\n};\nreturn [{ json: post }];"
+      },
+      "id": "post-generator",
+      "name": "Post Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const storyData = $input.first().json;\nconst story = {\n  type: 'story',\n  caption: `Story time! 📱\\n\\n${storyData.hashtags}`,\n  hashtags: storyData.hashtags,\n  scheduledTime: storyData.scheduledTime,\n  media: {\n    type: 'image',\n    url: 'https://example.com/placeholder-story.jpg',\n    altText: 'Instagram story image'\n  },\n  duration: 24 * 60 * 60 * 1000,\n  engagement: storyData.engagement\n};\nreturn [{ json: story }];"
+      },
+      "id": "story-generator",
+      "name": "Story Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reelData = $input.first().json;\nconst reel = {\n  type: 'reel',\n  caption: `New reel alert! 🎬\\n\\n${reelData.hashtags}`,\n  hashtags: reelData.hashtags,\n  scheduledTime: reelData.scheduledTime,\n  media: {\n    type: 'video',\n    url: 'https://example.com/placeholder-reel.mp4',\n    altText: 'Instagram reel video',\n    duration: 30\n  },\n  engagement: reelData.engagement\n};\nreturn [{ json: reel }];"
+      },
+      "id": "reel-generator",
+      "name": "Reel Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const carouselData = $input.first().json;\nconst carousel = {\n  type: 'carousel',\n  caption: `Swipe through these amazing photos! 📸\\n\\n${carouselData.hashtags}`,\n  hashtags: carouselData.hashtags,\n  scheduledTime: carouselData.scheduledTime,\n  media: {\n    type: 'carousel',\n    items: [\n      { url: 'https://example.com/carousel-1.jpg', altText: 'Carousel image 1' },\n      { url: 'https://example.com/carousel-2.jpg', altText: 'Carousel image 2' },\n      { url: 'https://example.com/carousel-3.jpg', altText: 'Carousel image 3' }\n    ]\n  },\n  engagement: carouselData.engagement\n};\nreturn [{ json: carousel }];"
+      },
+      "id": "carousel-generator",
+      "name": "Carousel Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $input.first().json;\nconst isApproved = Math.random() > 0.1;\nif (isApproved) {\n  content.approved = true;\n  content.approvedAt = new Date().toISOString();\n  content.approvedBy = 'Automated System';\n  content.postingInstructions = {\n    platform: 'Instagram',\n    account: '@influencer_handle',\n    scheduledTime: content.scheduledTime,\n    autoPost: true\n  };\n} else {\n  content.approved = false;\n  content.rejectionReason = 'Content quality check failed';\n}\nreturn [{ json: content }];"
+      },
+      "id": "content-approver",
+      "name": "Content Approver",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "approval-router",
+      "name": "Approval Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const approvedContent = $input.first().json;\nconst postResult = {\n  success: true,\n  postId: `ig_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,\n  platform: 'Instagram',\n  postedAt: new Date().toISOString(),\n  content: approvedContent,\n  metrics: {\n    initialViews: Math.floor(Math.random() * 1000) + 100,\n    initialLikes: Math.floor(Math.random() * 100) + 10,\n    initialComments: Math.floor(Math.random() * 20) + 2\n  }\n};\nconsole.log(`✅ Posted ${approvedContent.type} to Instagram: ${postResult.postId}`);\nreturn [{ json: postResult }];"
+      },
+      "id": "instagram-poster",
+      "name": "Instagram Poster",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const postResult = $input.first().json;\nconst content = postResult.content;\nconst report = {\n  timestamp: new Date().toISOString(),\n  postId: postResult.postId,\n  contentType: content.type,\n  platform: 'Instagram',\n  performance: {\n    views: postResult.metrics.initialViews,\n    likes: postResult.metrics.initialLikes,\n    comments: postResult.metrics.initialComments,\n    engagementRate: ((postResult.metrics.initialLikes + postResult.metrics.initialComments) / postResult.metrics.initialViews * 100).toFixed(2),\n    reach: Math.floor(postResult.metrics.initialViews * (1 + Math.random() * 0.5))\n  },\n  hashtags: content.hashtags,\n  scheduledTime: content.scheduledTime,\n  actualPostTime: postResult.postedAt\n};\nconsole.log(`📊 Performance Report for ${content.type}:`, report);\nreturn [{ json: report }];"
+      },
+      "id": "analytics-generator",
+      "name": "Analytics Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $input.first().json;\nconst notification = {\n  type: 'success',\n  title: 'Instagram Post Published Successfully! 🎉',\n  message: `Your ${report.contentType} has been posted to Instagram.\\n\\n📊 Performance Metrics:\\n• Views: ${report.performance.views}\\n• Likes: ${report.performance.likes}\\n• Comments: ${report.performance.comments}\\n• Engagement Rate: ${report.performance.engagementRate}%\\n• Reach: ${report.performance.reach}\\n\\n⏰ Posted at: ${new Date(report.actualPostTime).toLocaleString()}\\n\\n${report.hashtags}`,\n  timestamp: new Date().toISOString(),\n  priority: 'medium'\n};\nconsole.log(`🔔 Notification sent: ${notification.title}`);\nreturn [{ json: notification }];"
+      },
+      "id": "notification-sender",
+      "name": "Notification Sender",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rejectedContent = $input.first().json;\nconst rejectionNotification = {\n  type: 'warning',\n  title: 'Content Rejected ❌',\n  message: `Your ${rejectedContent.type} content was not approved.\\n\\nReason: ${rejectedContent.rejectionReason}\\n\\nContent Type: ${rejectedContent.type}\\nScheduled Time: ${rejectedContent.scheduledTime}\\n\\nPlease review and resubmit.`,\n  timestamp: new Date().toISOString(),\n  priority: 'high',\n  actionRequired: true\n};\nconsole.log(`❌ Content rejected: ${rejectedContent.type}`);\nreturn [{ json: rejectionNotification }];"
+      },
+      "id": "rejection-handler",
+      "name": "Rejection Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 600]
+    }
+  ],
+  "connections": {
+    "Daily Post Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Content Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Planner": {
+      "main": [
+        [
+          {
+            "node": "Content Type Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Type Router": {
+      "main": [
+        [
+          {
+            "node": "Post Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Story Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reel Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Carousel Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reel Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carousel Generator": {
+      "main": [
+        [
+          {
+            "node": "Content Approver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Approver": {
+      "main": [
+        [
+          {
+            "node": "Approval Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Router": {
+      "main": [
+        [
+          {
+            "node": "Instagram Poster",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rejection Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram Poster": {
+      "main": [
+        [
+          {
+            "node": "Analytics Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Generator": {
+      "main": [
+        [
+          {
+            "node": "Notification Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "instagram-automation",
+      "name": "Instagram Automation"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
